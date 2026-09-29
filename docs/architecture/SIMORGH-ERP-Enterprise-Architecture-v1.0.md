@@ -255,8 +255,8 @@ flowchart TB
 | لایه | انتخاب | یادداشت |
 |---|---|---|
 | Monorepo | **pnpm workspaces + Turborepo** | کش build، اجرای موازی |
-| Web | **Next.js 15 (App Router)** · React 19 · Tailwind · shadcn/ui · TanStack Query/Table · react-hook-form + Zod | RTL کامل، fa/en/tr (مثل `lang.ts` Design Suite) |
-| API | **NestJS 11** (Fastify adapter) · Zod-validated DTO · OpenAPI 3.1 | Modular Monolith |
+| Web | **Next.js 16 (App Router)** · React 19 · Tailwind · shadcn/ui · TanStack Query/Table · react-hook-form + Zod | RTL کامل، fa/en/tr (مثل `lang.ts` Design Suite) |
+| API | **NestJS 12** (ESM، Fastify adapter) · Zod 4 از طریق `StandardSchemaValidationPipe` · OpenAPI 3.1 | Modular Monolith؛ TypeScript روی 5.9 ثابت است (NestJS به decorator metadata نیاز دارد) |
 | Worker | NestJS standalone + **BullMQ** | Outbox relay، MRP، گزارش، ایمیل |
 | DB | **PostgreSQL 16+** · RLS · `ltree` · `pg_trgm` · پارتیشن‌بندی برای audit/stock/journal | |
 | ORM/Migration | **Drizzle ORM** + `drizzle-kit` + فایل‌های SQL دستی برای RLS/Trigger | |
@@ -1302,7 +1302,7 @@ Simorgh-ERP/
 | مرحله | کار | معیار پایان |
 |---|---|---|
 | **M0 — بهداشت** | چرخش همهٔ کلیدها و secretهایی که در مخازن عمومی commit شده‌اند؛ پاک‌سازی تاریخچه؛ فعال‌سازی secret scanning | هیچ secret در git |
-| **M1 — اسکلت** | monorepo، CI (lint، typecheck، test، boundaries)، `packages/db` با DDL پیوست B، Kernel: Tenant/Identity/RBAC/Audit/Outbox/Numbering/Files | ورود، ساخت tenant و نقش، تست RLS سبز |
+| **M1 — اسکلت** ✅ | monorepo، CI (lint، typecheck، test، boundaries)، `packages/db` با DDL پیوست B، Kernel: Tenant/Identity/RBAC/Audit/Outbox/Numbering/Files | ورود، ساخت tenant و نقش، تست RLS سبز — **انجام شد** (README ریشه: «وضعیت M1») |
 | **M2 — Kara → ERP** | انتقال منطق Kara به ماژول‌های `org`، `workflow`، `hcm`؛ اسکریپت `tools/migrate-kara`: برای هر `tenant_<slug>` داده‌ها با `tenant_id` به shared schema کپی می‌شوند؛ UI به `apps/web` منتقل می‌شود | همهٔ صفحات Kara روی ERP؛ Kara فقط‌خواندنی و سپس خاموش |
 | **M3 — Design Suite پشت احراز هویت ERP** | UI در `packages/design-suite` و mount در `apps/web/eng`؛ Express موقتاً پشت API gateway با توکن ERP؛ `prj.projects` و Design با OE پیوند می‌خورد | هیچ دسترسی بدون احراز هویت |
 | **M4 — Design Suite → Postgres** | ماژول `elec` در NestJS؛ اسکریپت `tools/migrate-mongo`: `ProjectData` → جداول `elec.*` + هندسه در jsonb/MinIO، `revisions` → `eng.design_revisions`؛ Parts → `core.items` | Mongo فقط‌خواندنی و سپس حذف؛ EBOM از Revision تولید می‌شود |

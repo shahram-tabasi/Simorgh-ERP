@@ -14,9 +14,6 @@
 --   * money numeric(20,4), quantity numeric(20,6), rate numeric(20,10)
 --   * posted financial documents are immutable (triggers below)
 --
--- Since M1 the source of truth is packages/db/migrations: 0001_kernel.sql is
--- this file, and every later change is a new numbered migration there.
---
 -- The application connects as role simorgh_app (no BYPASSRLS, not owner) and
 -- sets `app.tenant_id` / `app.user_id` with set_config(..., true) per transaction.
 -- =============================================================================

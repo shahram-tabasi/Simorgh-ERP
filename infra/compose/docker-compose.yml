@@ -1,0 +1,44 @@
+# Local development infrastructure for SIMORGH ERP.
+#   docker compose -f infra/compose/docker-compose.yml up -d
+# then see the root README for migrating and starting the apps.
+name: simorgh
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: simorgh
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-app-dev}
+      WORKER_DB_PASSWORD: ${WORKER_DB_PASSWORD:-worker-dev}
+    ports: ['5432:5432']
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # creates simorgh_app / simorgh_worker before the first migration
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports: ['6379:6379']
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    ports: ['5672:5672', '15672:15672']
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-simorgh}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-simorgh-dev-secret}
+    ports: ['9000:9000', '9001:9001']
+    volumes:
+      - s3data:/data
+
+volumes:
+  pgdata:
+  s3data:
