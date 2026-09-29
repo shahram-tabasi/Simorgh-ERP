@@ -30,8 +30,8 @@ services:
     ports: ['5672:5672', '15672:15672']
 
   minio:
-    image: minio/minio:latest
-    command: server /data --console-address :9001
+    build: ./minio
+    command: ['server', '/data', '--console-address', ':9001']
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY:-simorgh}
       MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-simorgh-dev-secret}

@@ -35,17 +35,33 @@ jobs:
       S3_TEST_ACCESS_KEY: simorgh
       S3_TEST_SECRET_KEY: simorgh-ci-secret
       S3_TEST_ENFORCES_SIGNATURES: '1'
+      # keep in step with infra/compose/minio/Dockerfile
+      MINIO_VERSION: v0.0.0-20260212201848-7aac2a2c5b7c
 
     steps:
       - uses: actions/checkout@v4
-      # MinIO needs `server /data` as its command, which service containers cannot pass
+      # MinIO no longer publishes binaries or Docker images; it ships as source.
+      # Build the pinned version once and cache the binary.
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: false
+      - name: Cache MinIO build
+        id: minio-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/minio-bin
+          key: minio-${{ env.MINIO_VERSION }}-go1.24
+      - name: Build MinIO
+        if: steps.minio-cache.outputs.cache-hit != 'true'
+        run: GOBIN=$HOME/minio-bin go install github.com/minio/minio@${MINIO_VERSION}
       - name: Start MinIO
         run: |
-          docker run -d --name minio -p 9000:9000 \
-            -e MINIO_ROOT_USER=simorgh -e MINIO_ROOT_PASSWORD=simorgh-ci-secret \
-            minio/minio:latest server /data
-          for i in $(seq 1 30); do curl -sf http://localhost:9000/minio/health/live && exit 0; sleep 2; done
-          docker logs minio; exit 1
+          mkdir -p /tmp/minio-data
+          MINIO_ROOT_USER=simorgh MINIO_ROOT_PASSWORD=simorgh-ci-secret \
+            nohup "$HOME/minio-bin/minio" server /tmp/minio-data --address :9000 > /tmp/minio.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:9000/minio/health/live && exit 0; sleep 1; done
+          cat /tmp/minio.log; exit 1
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
