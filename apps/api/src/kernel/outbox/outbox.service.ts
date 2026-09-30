@@ -14,7 +14,7 @@ export interface DomainEvent<T = unknown> {
 /**
  * Transactional outbox (architecture §20): the event row is written in the
  * same transaction as the change it describes. The worker's relay publishes
- * it to RabbitMQ afterwards, so an event exists if and only if its change
+ * it to Kafka afterwards, so an event exists if and only if its change
  * committed.
  */
 @Injectable()

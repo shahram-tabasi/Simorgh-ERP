@@ -22,15 +22,17 @@ jobs:
         ports: ['5432:5432']
         options: >-
           --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
-      rabbitmq:
-        image: rabbitmq:3.13-alpine
-        ports: ['5672:5672']
+      # Single-node KRaft broker; the image's defaults advertise localhost:9092
+      kafka:
+        image: apache/kafka:4.2.2
+        ports: ['9092:9092']
         options: >-
-          --health-cmd "rabbitmq-diagnostics -q ping" --health-interval 5s --health-timeout 10s --health-retries 20
+          --health-cmd "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092"
+          --health-interval 5s --health-timeout 10s --health-retries 30
 
     env:
       DATABASE_URL_OWNER: postgres://postgres:postgres@localhost:5432/postgres
-      AMQP_URL: amqp://guest:guest@localhost:5672
+      KAFKA_BROKERS: localhost:9092
       S3_TEST_ENDPOINT: http://localhost:9000
       S3_TEST_ACCESS_KEY: simorgh
       S3_TEST_SECRET_KEY: simorgh-ci-secret
@@ -69,6 +71,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check:boundaries
+      - run: pnpm check:licenses
       - run: pnpm build
       - run: pnpm lint
       - run: pnpm typecheck

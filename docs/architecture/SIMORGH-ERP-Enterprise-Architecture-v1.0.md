@@ -53,8 +53,8 @@
 | ADR-04 | دیتابیس تراکنشی واحد: **PostgreSQL 16+** | Mongo (Design Suite) + MySQL + Postgres موازی | ERP یعنی Join و تراکنش؛ یک منبع حقیقت |
 | ADR-05 | چندمستأجری: **Shared Schema + `tenant_id` + Row-Level Security**؛ امکان دیتابیس اختصاصی برای مشتری Enterprise/On-prem | Schema-per-tenant (مدل فعلی Kara) | با ۴۰۰+ جدول، مهاجرت N اسکیما پرهزینه و شکننده است |
 | ADR-06 | دسترسی به داده: **Drizzle ORM** + migrationهای SQL-first | Prisma | کنترل کامل SQL، RLS، پارتیشن‌بندی و `SET LOCAL` |
-| ADR-07 | رویداد: **Transactional Outbox → RabbitMQ** | انتشار مستقیم از کد | RabbitMQ همین حالا در infra وجود دارد؛ Outbox تضمین می‌کند رویداد بدون تراکنش ثبت نشود |
-| ADR-08 | کارهای پس‌زمینه: **BullMQ روی Redis** در `apps/worker` | cron در Next.js | MRP، گزارش مالی، بستن دوره |
+| ADR-07 | رویداد: **Transactional Outbox → Apache Kafka** (KRaft، یک topic به ازای هر ماژول، کلید = شناسهٔ سند) | RabbitMQ (نسخهٔ اول این ADR)؛ انتشار مستقیم از کد | بازپخش تاریخچه برای Projection، RAG و گزارش؛ ترتیب به ازای هر سند؛ حجم IoT در فاز Twin؛ Kafka Connect/Debezium. Outbox تضمین می‌کند رویداد بدون تراکنش ثبت نشود. (بازنگری ۱۴۰۵/۰۷/۰۸ پیش از نوشتن هر مصرف‌کننده) |
+| ADR-08 | کارهای پس‌زمینه: **BullMQ روی Valkey** در `apps/worker` | cron در Next.js؛ Redis (از نسخهٔ 7.4 متن‌باز نیست) | MRP، گزارش مالی، بستن دوره؛ صف تأخیری و retry اینجاست، نه در Kafka |
 | ADR-09 | فایل‌ها: **S3-compatible (MinIO)**؛ متادیتا در Postgres | فایل در Mongo/دیسک | Backup و نسخه‌بندی یکسان |
 | ADR-10 | هویت: ماژول Identity داخلی (ترکیب اسکیمای auth پلتفرم AI + الگوی jose/cookie در Kara)، OIDC/LDAP-ready | Keycloak از روز اول | سادگی استقرار On-prem؛ SSO سازمانی در فاز بعد |
 | ADR-11 | AI فقط از طریق **API عمومی / MCP** و با **مجوز همان کاربر** عمل می‌کند؛ هر نوشتنی = **Proposal** تا تأیید انسان | دسترسی مستقیم AI به دیتابیس | امنیت، ممیزی، قابل‌اعتماد بودن |
@@ -62,6 +62,7 @@
 | ADR-13 | **سند مالی ثبت‌قطعی‌شده تغییرناپذیر است**؛ اصلاح فقط با سند برگشتی | ویرایش سند | الزام حسابرسی |
 | ADR-14 | زمان: ذخیره UTC/میلادی، نمایش **جلالی**؛ سال مالی قابل تنظیم (پیش‌فرض ۱ فروردین) | ذخیرهٔ تاریخ جلالی | محاسبات، گزارش‌گیری و یکپارچه‌سازی |
 | ADR-15 | زبان منطق کسب‌وکار: **TypeScript**. Python فقط در لایهٔ AI/ML | دو زبان در منطق ERP | یک زبان در Web، API، Design Suite و CAD engine |
+| ADR-16 | **فقط متن‌باز (مجوز OSI)**؛ هر مؤلفهٔ غیرمتن‌باز یا هر جایگزین بهتر پیش از پیاده‌سازی برای تصمیم مطرح می‌شود. در CI با `pnpm check:licenses` اجرا می‌شود | انتخاب موردی | استقلال از فروشنده، استقرار On-prem بدون لایسنس، نبود دوباره‌کاری. فهرست و تصمیم‌های باز: [ثبت فناوری‌ها](./technology-register.md) |
 
 ---
 
@@ -194,10 +195,10 @@ flowchart TB
 
   subgraph Data
     PG[(PostgreSQL<br/>RLS per tenant)]
-    RD[(Redis)]
+    RD[(Valkey)]
     S3[(MinIO / S3)]
-    MQ[[RabbitMQ]]
-    ES[(OpenSearch/Elastic<br/>search + logs)]
+    MQ[[Kafka]]
+    ES[(OpenSearch<br/>search + logs)]
     VEC[(Qdrant)]
   end
 
@@ -260,14 +261,14 @@ flowchart TB
 | Worker | NestJS standalone + **BullMQ** | Outbox relay، MRP، گزارش، ایمیل |
 | DB | **PostgreSQL 16+** · RLS · `ltree` · `pg_trgm` · پارتیشن‌بندی برای audit/stock/journal | |
 | ORM/Migration | **Drizzle ORM** + `drizzle-kit` + فایل‌های SQL دستی برای RLS/Trigger | |
-| Cache/Queue | **Redis 7** | Session، rate limit، BullMQ |
-| Message Bus | **RabbitMQ** (topic exchange) | از infra فعلی |
+| Cache/Queue | **Valkey 8** (fork متن‌باز Redis، BSD) | Session، rate limit، BullMQ |
+| Event Bus | **Apache Kafka 4.2** (KRaft) · کلاینت `@platformatic/kafka` (Apache-2.0، JS خالص) | یک نود On-prem، سه نود SaaS |
 | Files | **MinIO** (S3 API) | پیوست، نقشه، PDF، DXF |
-| Search | **OpenSearch/Elasticsearch** | جستجوی سراسری + لاگ (ELK فعلی) |
+| Search | **OpenSearch** (Apache-2.0) | جستجوی سراسری + لاگ؛ جایگزینی ELK فعلی تصمیم باز است (ثبت فناوری‌ها) |
 | Vector | **Qdrant** | از پلتفرم AI فعلی |
 | AI | Python 3.12 · FastAPI · LiteLLM · vLLM · Claude API | لایهٔ جدا |
 | Auth | jose (JWT) · argon2id · TOTP · OIDC client | |
-| Observability | OpenTelemetry → ELK/Tempo · structlog/pino JSON | |
+| Observability | OpenTelemetry → OpenSearch/Tempo · structlog/pino JSON | |
 | Test | Vitest · Playwright · Testcontainers (Postgres واقعی) | |
 | Deploy | Docker Compose (On-prem) · Helm/Kubernetes (SaaS) | یک Image، چند حالت |
 | Desktop | **Electron** (از `simorgh-soft/desktop`) | اتصال محلی EPLAN |
@@ -474,7 +475,7 @@ export const SALES_PERMISSIONS = definePermissions('sales', {
 5. **SoD و سقف مبلغ:** در Workflow Engine (مثلاً PO بیش از X نیاز به تأیید مدیرعامل
    دارد).
 
-کش مجوز در Redis با کلید `perm:{tid}:{uid}:{perm_ver}`. هر تغییر نقش `perm_ver`
+کش مجوز در Valkey با کلید `perm:{tid}:{uid}:{perm_ver}`. هر تغییر نقش `perm_ver`
 را افزایش می‌دهد.
 
 ---
@@ -782,7 +783,7 @@ erDiagram
 | **BFF** (Next.js Route Handlers / Server Components) | فقط UI خود Simorgh | تجمیع و کوکی |
 | **MCP** `/mcp` | AI Agents | ابزارهای تولیدشده از OpenAPI + ابزارهای دستی |
 | **Webhooks** (خروجی) | سیستم‌های مشتری | امضای HMAC، retry |
-| **Events** (RabbitMQ) | سرویس‌های داخلی/AI | بخش ۲۰ |
+| **Events** (Kafka) | سرویس‌های داخلی/AI | بخش ۲۰ |
 | **Integration API** `/integrations/*` | device-bridge، eplan-bridge | توکن دستگاه/سرویس |
 
 ### ۹.۲ قراردادها
@@ -1112,7 +1113,7 @@ flowchart LR
   MCP --> API[ERP API<br/>RBAC enforced]
   API -->|write = Proposal| PR[(ai.proposals)]
   PR -->|user approves| API
-  EV[[RabbitMQ events]] --> KN
+  EV[[Kafka events]] --> KN
   EV --> ML[ml: forecast · anomaly]
   ML -->|insights| API
 ```
@@ -1198,7 +1199,7 @@ Oil & Gas (پس از اثبات مدل با Electrical).
                                        │
                              apps/worker: outbox relay (poll + LISTEN/NOTIFY)
                                        ▼
-                           RabbitMQ exchange: erp.events (topic)
+          Kafka topic به ازای ماژول: erp.<module>.events (key = subject.id)
              ┌─────────────────────────┼──────────────────────────┐
      erp internal async          AI (knowledge/ml)          integrations / webhooks
      subscribers (inbox)
@@ -1220,13 +1221,26 @@ Oil & Gas (پس از اثبات مدل با Electrical).
 }
 ```
 
-- **نام‌گذاری:** `<module>.<entity>.<past-tense-verb>`؛ routing key همان نام.
-- **Idempotency مصرف‌کننده:** `core.inbox_events (consumer, event_id)` unique.
-- **ترتیب:** به ازای `subject.id` (partitioned consumers در صورت نیاز).
-- **Schema registry:** Zod schemaها در `packages/contracts/events`. تغییر ناسازگار
-  یعنی `version` جدید.
-- **Retention:** outbox پس از ارسال ۷ روز نگه داشته می‌شود. رویدادهای کسب‌وکاری
-  مهم در audit/آرشیو باقی می‌مانند.
+- **نام‌گذاری رویداد:** `<module>.<entity>.<past-tense-verb>`. نام ماژول فقط حروف است
+  (بدون `_`)، چون Kafka در نام metricها `.` و `_` را یکی می‌گیرد.
+- **Topic:** یکی به ازای هر ماژول، `erp.<module>.events` (مثلاً `erp.sales.events`).
+  topic را relay با تنظیمات صریح می‌سازد و auto-create در broker خاموش است.
+- **Key و ترتیب:** key = `subject.id`، پس همهٔ رویدادهای یک سند در یک partition و به
+  ترتیب می‌مانند. ترتیب بین سندهای مختلف تضمین نمی‌شود و لازم هم نیست.
+- **Headerها:** `event-id`، `event-type`، `event-version`، `tenant-id`، `correlation-id`؛
+  مصرف‌کننده بدون parse کردن value می‌تواند فیلتر کند.
+- **تحویل:** producer idempotent با `acks=all`. relay ردیف را فقط پس از تأیید Kafka
+  «منتشرشده» علامت می‌زند، پس ارسال حداقل‌یک‌بار است.
+- **Idempotency مصرف‌کننده:** `core.inbox_events (consumer, event_id)` unique؛
+  هر consumer group پیش از اثر گذاشتن، شناسهٔ رویداد را ثبت می‌کند.
+- **Retention:** پیش‌فرض ۳۶۵ روز در Kafka (قابل تنظیم؛ `-1` = دائمی)، تا Projection
+  یا ایندکس جدید بتواند تاریخچه را از اول بخواند. outbox در Postgres پس از ارسال ۷ روز
+  می‌ماند.
+- **Schema:** Zod schemaها در `packages/contracts/events`؛ تغییر ناسازگار یعنی `version`
+  جدید. اگر روزی registry لازم شد، Apicurio یا Karapace (Apache-2.0)، نه Confluent Schema
+  Registry (مجوز آن متن‌باز نیست).
+- **Replication:** یک broker در On-prem کوچک (`KAFKA_REPLICATION_FACTOR=1`)؛ سه broker
+  با `min.insync.replicas=2` در SaaS.
 
 ### ۲۰.۲ رویدادهای کلیدی نسخهٔ ۱
 
@@ -1283,7 +1297,7 @@ Simorgh-ERP/
 ├── infra/
 │   ├── compose/                on-prem (مثل simorgh-agent/compose فعلی)
 │   ├── helm/
-│   └── observability/          ELK، OTel
+│   └── observability/          OpenSearch، OTel
 ├── docs/
 │   ├── architecture/           ← این سند
 │   ├── adr/

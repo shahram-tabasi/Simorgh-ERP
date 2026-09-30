@@ -1,10 +1,10 @@
 import pg from 'pg';
-import { AmqpPublisher } from './amqp-publisher.js';
+import { KafkaPublisher } from './kafka-publisher.js';
 import { OutboxRelay } from './relay.js';
 
 // The relay connects as simorgh_worker: BYPASSRLS, but granted only the outbox.
 const dbUrl = process.env.WORKER_DATABASE_URL;
-const amqpUrl = process.env.AMQP_URL ?? 'amqp://guest:guest@localhost:5672';
+const brokers = (process.env.KAFKA_BROKERS ?? 'localhost:9092').split(',').map((s) => s.trim());
 const pollMs = Number(process.env.OUTBOX_POLL_MS ?? 5000);
 if (!dbUrl) {
   console.error('WORKER_DATABASE_URL is not set');
@@ -12,7 +12,12 @@ if (!dbUrl) {
 }
 
 const pool = new pg.Pool({ connectionString: dbUrl, max: 2 });
-const publisher = await AmqpPublisher.connect(amqpUrl);
+const publisher = new KafkaPublisher({
+  brokers,
+  partitions: Number(process.env.KAFKA_EVENTS_PARTITIONS ?? 6),
+  replicationFactor: Number(process.env.KAFKA_REPLICATION_FACTOR ?? 1),
+  retentionMs: Number(process.env.KAFKA_EVENTS_RETENTION_MS ?? 365 * 86_400_000),
+});
 const relay = new OutboxRelay(pool, publisher);
 
 // Woken by NOTIFY from the outbox trigger; the poll is only a safety net.
@@ -30,7 +35,7 @@ const stop = async () => {
 process.on('SIGTERM', stop);
 process.on('SIGINT', stop);
 
-console.log('outbox relay started');
+console.log(`outbox relay started (kafka: ${brokers.join(',')})`);
 while (running) {
   try {
     const n = await relay.drain();

@@ -10,13 +10,12 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@platformatic/kafka": "^2.12.1",
     "@simorgh/contracts": "workspace:*",
     "@simorgh/db": "workspace:*",
-    "amqplib": "^0.10.9",
     "pg": "^8.23.0"
   },
   "devDependencies": {
-    "@types/amqplib": "^0.10.8",
     "@types/node": "^22.19.0",
     "@types/pg": "^8.23.1",
     "typescript": "5.9.3",
