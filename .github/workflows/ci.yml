@@ -33,37 +33,26 @@ jobs:
     env:
       DATABASE_URL_OWNER: postgres://postgres:postgres@localhost:5432/postgres
       KAFKA_BROKERS: localhost:9092
-      S3_TEST_ENDPOINT: http://localhost:9000
+      S3_TEST_ENDPOINT: http://localhost:8333
       S3_TEST_ACCESS_KEY: simorgh
-      S3_TEST_SECRET_KEY: simorgh-ci-secret
+      S3_TEST_SECRET_KEY: simorgh-dev-secret
       S3_TEST_ENFORCES_SIGNATURES: '1'
-      # keep in step with infra/compose/minio/Dockerfile
-      MINIO_VERSION: v0.0.0-20260212201848-7aac2a2c5b7c
+      # keep in step with infra/compose/docker-compose.yml
+      SEAWEEDFS_VERSION: '4.48'
 
     steps:
       - uses: actions/checkout@v4
-      # MinIO no longer publishes binaries or Docker images; it ships as source.
-      # Build the pinned version once and cache the binary.
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
-          cache: false
-      - name: Cache MinIO build
-        id: minio-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/minio-bin
-          key: minio-${{ env.MINIO_VERSION }}-go1.24
-      - name: Build MinIO
-        if: steps.minio-cache.outputs.cache-hit != 'true'
-        run: GOBIN=$HOME/minio-bin go install github.com/minio/minio@${MINIO_VERSION}
-      - name: Start MinIO
+      # S3-compatible storage (ADR-09): SeaweedFS with credentials, so the
+      # presigned-URL signature checks in the tests are real. Same config file
+      # and version as docker compose, so CI and development run one setup.
+      - name: Start SeaweedFS (S3)
         run: |
-          mkdir -p /tmp/minio-data
-          MINIO_ROOT_USER=simorgh MINIO_ROOT_PASSWORD=simorgh-ci-secret \
-            nohup "$HOME/minio-bin/minio" server /tmp/minio-data --address :9000 > /tmp/minio.log 2>&1 &
-          for i in $(seq 1 30); do curl -sf http://localhost:9000/minio/health/live && exit 0; sleep 1; done
-          cat /tmp/minio.log; exit 1
+          docker run -d --name seaweedfs -p 8333:8333 \
+            -v "$PWD/infra/compose/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro" \
+            "chrislusf/seaweedfs:${SEAWEEDFS_VERSION}" server -s3 -s3.config=/etc/seaweedfs/s3.json -dir=/data \
+            -volume.max=0 -master.volumeSizeLimitMB=1024
+          for i in $(seq 1 60); do curl -s -o /dev/null http://localhost:8333 && exit 0; sleep 1; done
+          docker logs seaweedfs; exit 1
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:

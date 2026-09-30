@@ -24,7 +24,7 @@ export interface ObjectStorage {
 
 export const OBJECT_STORAGE = Symbol('OBJECT_STORAGE');
 
-/** S3 API — MinIO on-prem, any S3-compatible store in the cloud. */
+/** S3 API — SeaweedFS on-prem (ADR-09), or any S3-compatible store the customer runs. */
 export class S3ObjectStorage implements ObjectStorage {
   private readonly s3: S3Client;
   private readonly bucket: string;

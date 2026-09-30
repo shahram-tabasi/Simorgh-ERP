@@ -49,14 +49,18 @@ services:
     volumes:
       - kafkadata:/var/lib/kafka/data
 
-  minio:
-    build: ./minio
-    command: ['server', '/data', '--console-address', ':9001']
-    environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-simorgh}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-simorgh-dev-secret}
-    ports: ['9000:9000', '9001:9001']
+  # S3-compatible object storage (ADR-09). Apache-2.0; replaced MinIO, whose
+  # community edition is end of life (docs/architecture/technology-register.md §6).
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.48
+    # -volume.max=0: size the volume count by free disk (the default cap of 8 runs out,
+    # since every bucket pre-allocates its own volumes); 1 GB volumes suit an ERP's files.
+    command:
+      ['server', '-s3', '-s3.config=/etc/seaweedfs/s3.json', '-dir=/data', '-volume.max=0', '-master.volumeSizeLimitMB=1024']
+    ports: ['8333:8333']
     volumes:
+      # development credentials only; a real install generates its own
+      - ./seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
       - s3data:/data
 
 volumes:

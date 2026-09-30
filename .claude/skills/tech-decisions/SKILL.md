@@ -33,7 +33,7 @@ Exception: an owner decision already recorded in
 | Question | How to check | Fails when |
 |---|---|---|
 | License | `npm view <pkg> license`; the project's LICENSE file; SPDX id | not OSI-approved: SSPL, BUSL/BSL, Elastic License, RSAL, Commons Clause, Confluent Community, "source-available", proprietary |
-| Copyleft reach | GPL/AGPL in a library we link = our code must follow it | GPL/AGPL linked into our code. As a separate, unmodified network service it is OK (MinIO) |
+| Copyleft reach | GPL/AGPL in a library we link = our code must follow it | GPL/AGPL linked into our code. As a separate, unmodified network service it is OK (e.g. Mailcow) |
 | Maintained | last release date, open issues, deprecation notices | no release in ~12 months (kafkajs), archived, or "maintenance mode" |
 | Distribution | official image or binary still published? | the upstream stopped shipping it (MinIO images, Bitnami free images) |
 | Fit | ADRs in the architecture document | contradicts an ADR (e.g. business logic in Next.js server actions, a second transactional database) |
@@ -55,5 +55,5 @@ Exception: an owner decision already recorded in
 - Event bus: **Apache Kafka** (KRaft), client `@platformatic/kafka` — not RabbitMQ, not kafkajs.
 - Cache and queues: **Valkey** — not Redis ≥ 7.4.
 - Search and logs target: **OpenSearch** (moving the current ELK is open decision 1).
-- Object storage: code uses the S3 API only. **MinIO must not ship** — the community edition is end-of-life (frozen, no security patches) and AIStor Free forbids redistribution; it stays in CI for tests only. The replacement (SeaweedFS / Versity S3 Gateway) is open decision 2.
+- Object storage: **SeaweedFS** 4.48 (Apache-2.0), used only through the S3 API. Not MinIO: its community edition is end of life (frozen, no security patches) and AIStor Free forbids redistribution. Versity S3 Gateway remains a supported alternative for plain-files-on-NAS installs.
 - Open: graph database for the AI layer (decision 3).

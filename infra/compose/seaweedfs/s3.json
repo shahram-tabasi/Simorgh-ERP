@@ -1,0 +1,9 @@
+{
+  "identities": [
+    {
+      "name": "simorgh",
+      "credentials": [{ "accessKey": "simorgh", "secretKey": "simorgh-dev-secret" }],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}

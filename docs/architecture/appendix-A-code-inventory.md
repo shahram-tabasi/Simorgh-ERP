@@ -149,7 +149,7 @@
 | `ladderAssist.js`، `plcAssist.js` | 247/238 | REFACTOR | ابزار AI |
 | `symbolLibrary.js` | 231 | REFACTOR | ماژول `elec` (Postgres) |
 | `localDesktop.js` | 227 | REFACTOR | `apps/desktop` (حالت محلی Electron) |
-| `documents.js` | 208 | MOVE | `core.attachments` + MinIO |
+| `documents.js` | 208 | MOVE | `core.attachments` + S3 (SeaweedFS) |
 | `projectHistory.js` | 187 | MOVE | Document Engine / Audit |
 | `partsAccess.js` | 141 | REFACTOR | `integrations/eplan-bridge` → همگام‌سازی به `core.items` |
 | `projectLocks.js` | 131 | MOVE | `core.edit_locks` |
@@ -159,7 +159,7 @@
 | `dbTimeout.js`، `pdfText.js` | 28/25 | KEEP | ابزار |
 | `tpmsDoctor.cjs`، `tpmsConnCheck.sh` | 237/93 | KEEP | ابزار عیب‌یابی `tpms-connector` |
 | `eplan-symbols/`، `downloads/` | KEEP | دارایی |
-| `mongo/` (Dockerfile، backup.sh) | REPLACE | پشتیبان‌گیری Postgres/MinIO |
+| `mongo/` (Dockerfile، backup.sh) | REPLACE | پشتیبان‌گیری Postgres/S3 |
 | `desktop/` (Electron: main، preload، installer NSIS) | KEEP | `apps/desktop` |
 | `docs/*.pdf`، `DATA-SAFETY.md`، `EPLAN_SEND.md`، `TPMS_IMPORT.md`، `TPMS_MTU.md` | KEEP | `docs/domain/electrical` |
 | `.claude/skills/simorgh-soft/SKILL.md` | KEEP | `.claude/skills/design-suite` + تبدیل قواعد به تست |

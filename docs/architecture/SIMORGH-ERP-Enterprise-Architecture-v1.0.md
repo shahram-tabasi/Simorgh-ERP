@@ -55,7 +55,7 @@
 | ADR-06 | دسترسی به داده: **Drizzle ORM** + migrationهای SQL-first | Prisma | کنترل کامل SQL، RLS، پارتیشن‌بندی و `SET LOCAL` |
 | ADR-07 | رویداد: **Transactional Outbox → Apache Kafka** (KRaft، یک topic به ازای هر ماژول، کلید = شناسهٔ سند) | RabbitMQ (نسخهٔ اول این ADR)؛ انتشار مستقیم از کد | بازپخش تاریخچه برای Projection، RAG و گزارش؛ ترتیب به ازای هر سند؛ حجم IoT در فاز Twin؛ Kafka Connect/Debezium. Outbox تضمین می‌کند رویداد بدون تراکنش ثبت نشود. (بازنگری ۱۴۰۵/۰۷/۰۸ پیش از نوشتن هر مصرف‌کننده) |
 | ADR-08 | کارهای پس‌زمینه: **BullMQ روی Valkey** در `apps/worker` | cron در Next.js؛ Redis (از نسخهٔ 7.4 متن‌باز نیست) | MRP، گزارش مالی، بستن دوره؛ صف تأخیری و retry اینجاست، نه در Kafka |
-| ADR-09 | فایل‌ها: **S3-compatible (MinIO)**؛ متادیتا در Postgres | فایل در Mongo/دیسک | Backup و نسخه‌بندی یکسان |
+| ADR-09 | فایل‌ها: **S3-compatible — SeaweedFS** (Apache-2.0)؛ متادیتا در Postgres؛ کد فقط با API استاندارد S3 کار می‌کند | فایل در Mongo/دیسک؛ MinIO (نسخهٔ متن‌باز پایان عمر یافت، ۱۴۰۵/۰۷/۰۸) | Backup و نسخه‌بندی یکسان؛ مشتری می‌تواند S3 خودش را وصل کند |
 | ADR-10 | هویت: ماژول Identity داخلی (ترکیب اسکیمای auth پلتفرم AI + الگوی jose/cookie در Kara)، OIDC/LDAP-ready | Keycloak از روز اول | سادگی استقرار On-prem؛ SSO سازمانی در فاز بعد |
 | ADR-11 | AI فقط از طریق **API عمومی / MCP** و با **مجوز همان کاربر** عمل می‌کند؛ هر نوشتنی = **Proposal** تا تأیید انسان | دسترسی مستقیم AI به دیتابیس | امنیت، ممیزی، قابل‌اعتماد بودن |
 | ADR-12 | **Core هرگز به Industry Pack وابسته نیست**؛ Pack فقط از API عمومی Core استفاده می‌کند | کدهای برق داخل Core | عمومی ماندن Core |
@@ -196,7 +196,7 @@ flowchart TB
   subgraph Data
     PG[(PostgreSQL<br/>RLS per tenant)]
     RD[(Valkey)]
-    S3[(MinIO / S3)]
+    S3[(SeaweedFS / S3)]
     MQ[[Kafka]]
     ES[(OpenSearch<br/>search + logs)]
     VEC[(Qdrant)]
@@ -263,7 +263,7 @@ flowchart TB
 | ORM/Migration | **Drizzle ORM** + `drizzle-kit` + فایل‌های SQL دستی برای RLS/Trigger | |
 | Cache/Queue | **Valkey 8** (fork متن‌باز Redis، BSD) | Session، rate limit، BullMQ |
 | Event Bus | **Apache Kafka 4.2** (KRaft) · کلاینت `@platformatic/kafka` (Apache-2.0، JS خالص) | یک نود On-prem، سه نود SaaS |
-| Files | **MinIO** (S3 API) | پیوست، نقشه، PDF، DXF |
+| Files | **SeaweedFS 4.48** (S3 API، Apache-2.0) | پیوست، نقشه، PDF، DXF |
 | Search | **OpenSearch** (Apache-2.0) | جستجوی سراسری + لاگ؛ جایگزینی ELK فعلی تصمیم باز است (ثبت فناوری‌ها) |
 | Vector | **Qdrant** | از پلتفرم AI فعلی |
 | AI | Python 3.12 · FastAPI · LiteLLM · vLLM · Claude API | لایهٔ جدا |
@@ -619,7 +619,7 @@ cost element)، `timesheets`، `project_cost_lines` (projection از رویدا�
 | جدول | توضیح |
 |---|---|
 | `eng.designs` | پروژهٔ مهندسی (یک یا چند به ازای `prj.projects`)؛ status، master (`tpms`/`suite`)، current_revision |
-| `eng.design_revisions` | rev_no، source (tpms/suite)، frozen، snapshot_key (MinIO) |
+| `eng.design_revisions` | rev_no، source (tpms/suite)، frozen، snapshot_key (S3) |
 | `eng.ebom_headers` + `ebom_lines` | خروجی مهندسی: item، qty، ref_designator، assembly_path |
 | `eng.mto_runs` + `mto_lines` | Material Take-Off؛ تفاوت با Revision قبلی |
 | `eng.change_requests` (ECR/ECO) | |
@@ -629,7 +629,7 @@ cost element)، `timesheets`، `project_cost_lines` (projection از رویدا�
 | `elec.template_parts` | template × property slot → item |
 | `elec.device_lines` | ردیف‌های Device Selection (feeder no، bus section، rating، FLC، cable size) |
 | `elec.device_line_parts` | قطعات انتخاب‌شده → EBOM |
-| `elec.drawing_sets`، `elec.drawing_pages` | متادیتا؛ هندسه در `jsonb`/MinIO |
+| `elec.drawing_sets`، `elec.drawing_pages` | متادیتا؛ هندسه در `jsonb`/S3 |
 | `elec.symbol_library`، `elec.symbol_overrides` | |
 | `elec.plc_programs` | |
 | `elec.tech_settings` | `TechSettings` |
@@ -859,7 +859,7 @@ registerDocumentType({
 | Revision/Amend | `core.document_revisions` با snapshot + diff (`revisionDiff.ts`) | Design Suite |
 | قفل ویرایش | `core.edit_locks` با heartbeat | Design Suite `projectLocks.js` |
 | Document Flow | `core.document_links` (Quotation→SO→Delivery→Invoice) | NEW |
-| پیوست و نسخه | `core.attachments` + MinIO؛ sha256؛ پیش‌نمایش PDF | Design Suite `documents.js` |
+| پیوست و نسخه | `core.attachments` + S3 (SeaweedFS)؛ sha256؛ پیش‌نمایش PDF | Design Suite `documents.js` |
 | Annotation | `core.document_annotations` | Design Suite |
 | چاپ/خروجی | موتور قالب: HTML→PDF (Playwright)، Excel (exceljs)، DOCX؛ فارسی و RTL | Design Suite `mechanicalReport.ts` / `bpmsExport.ts` |
 | امضای دیجیتال | فاز بعد | NEW |
@@ -1076,8 +1076,8 @@ Project ─▶ Engineering Design ─▶ Equipment (Assemblies/Switchgears) ─�
 | نوع داده | محل | دلیل |
 |---|---|---|
 | **داده‌های ساخت‌یافته** (پروژه، سوئیچگیر، Template، ردیف دستگاه، قطعه، EBOM) | جداول `eng.*` و `elec.*` | لازم برای MTO، خرید، هزینه، گزارش، AI |
-| **هندسه و محتوای ویرایشگر** (sheets، shapes، symbol art، PLC program) | `jsonb` در `elec.drawing_pages` / فایل در MinIO | ساختار داخلی ویرایشگر؛ بدون Join |
-| **Revision منجمد** | snapshot فشرده در MinIO + رکورد در `eng.design_revisions` | همان رفتار فعلی |
+| **هندسه و محتوای ویرایشگر** (sheets، shapes، symbol art، PLC program) | `jsonb` در `elec.drawing_pages` / فایل در S3 | ساختار داخلی ویرایشگر؛ بدون Join |
+| **Revision منجمد** | snapshot فشرده در S3 + رکورد در `eng.design_revisions` | همان رفتار فعلی |
 
 ### ۱۷.۲ قاعدهٔ انتشار (Release)
 
@@ -1319,7 +1319,7 @@ Simorgh-ERP/
 | **M1 — اسکلت** ✅ | monorepo، CI (lint، typecheck، test، boundaries)، `packages/db` با DDL پیوست B، Kernel: Tenant/Identity/RBAC/Audit/Outbox/Numbering/Files | ورود، ساخت tenant و نقش، تست RLS سبز — **انجام شد** (README ریشه: «وضعیت M1») |
 | **M2 — Kara → ERP** | انتقال منطق Kara به ماژول‌های `org`، `workflow`، `hcm`؛ اسکریپت `tools/migrate-kara`: برای هر `tenant_<slug>` داده‌ها با `tenant_id` به shared schema کپی می‌شوند؛ UI به `apps/web` منتقل می‌شود | همهٔ صفحات Kara روی ERP؛ Kara فقط‌خواندنی و سپس خاموش |
 | **M3 — Design Suite پشت احراز هویت ERP** | UI در `packages/design-suite` و mount در `apps/web/eng`؛ Express موقتاً پشت API gateway با توکن ERP؛ `prj.projects` و Design با OE پیوند می‌خورد | هیچ دسترسی بدون احراز هویت |
-| **M4 — Design Suite → Postgres** | ماژول `elec` در NestJS؛ اسکریپت `tools/migrate-mongo`: `ProjectData` → جداول `elec.*` + هندسه در jsonb/MinIO، `revisions` → `eng.design_revisions`؛ Parts → `core.items` | Mongo فقط‌خواندنی و سپس حذف؛ EBOM از Revision تولید می‌شود |
+| **M4 — Design Suite → Postgres** | ماژول `elec` در NestJS؛ اسکریپت `tools/migrate-mongo`: `ProjectData` → جداول `elec.*` + هندسه در jsonb/S3، `revisions` → `eng.design_revisions`؛ Parts → `core.items` | Mongo فقط‌خواندنی و سپس حذف؛ EBOM از Revision تولید می‌شود |
 | **M5 — یکپارچه‌سازی AI** | تجمیع ~۵۰ سرویس به ۴ سرویس + `simorgh_py`؛ حذف ۵ کپی `backend`؛ auth پلتفرم AI → Identity ERP؛ ابزارها از MCP ERP | کاهش ≥۶۰٪ کد Python؛ یک Login |
 | **M6 — TPMS** | `tpms-connector` فقط‌خواندنی تا وقتی پروژه‌های جدید در ERP ساخته شوند؛ سپس TPMS بایگانی | پروژهٔ جدید بدون TPMS |
 

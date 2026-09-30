@@ -34,7 +34,7 @@ apps/
 packages/
   db/         migrationهای SQL (منبع حقیقت)، schema در Drizzle، migrator، ابزار تست
   contracts/  Zod: درخواست‌ها و پاسخ‌های API، کاتالوگ مجوزها، envelope رویداد
-infra/compose/  PostgreSQL · Valkey · Kafka · MinIO برای توسعه
+infra/compose/  PostgreSQL · Valkey · Kafka · SeaweedFS (S3) برای توسعه
 tools/          check-boundaries (مرزهای معماری) · check-licenses (سیاست فقط‌متن‌باز) — هر دو در CI
 ```
 
@@ -76,7 +76,7 @@ curl -XPOST localhost:4000/api/v1/platform/tenants -H "authorization: Bearer $TO
 ```bash
 DATABASE_URL_OWNER=postgres://postgres:postgres@localhost:5432/postgres \
 KAFKA_BROKERS=localhost:9092 \
-S3_TEST_ENDPOINT=http://localhost:9000 S3_TEST_ACCESS_KEY=simorgh S3_TEST_SECRET_KEY=simorgh-dev-secret \
+S3_TEST_ENDPOINT=http://localhost:8333 S3_TEST_ACCESS_KEY=simorgh S3_TEST_SECRET_KEY=simorgh-dev-secret \
 pnpm test
 ```
 
@@ -90,9 +90,9 @@ pnpm test
 | Audit | در همان تراکنش تغییر؛ append-only (trigger + grant)؛ tenantها audit پلتفرم را نمی‌بینند |
 | Outbox | رویداد در همان تراکنش؛ relay با `FOR UPDATE SKIP LOCKED` به Kafka (producer idempotent، `acks=all`، یک topic به ازای ماژول، کلید = شناسهٔ سند) و ارسال حداقل‌یک‌بار |
 | Numbering | سری شماره به ازای نوع سند/شرکت/دوره؛ بدون شکاف در rollback |
-| Files | پیوست با آپلود مستقیم به S3/MinIO؛ اندازه، نوع و SHA-256 در امضا؛ تأیید پیش از `stored` |
+| Files | پیوست با آپلود مستقیم به S3 (SeaweedFS)؛ اندازه، نوع و SHA-256 در امضا؛ تأیید پیش از `stored` |
 | Web | ورود فارسی RTL، پیشخوان، صفحهٔ نقش‌ها؛ توکن‌ها فقط در کوکی httpOnly؛ refresh خودکار |
-| CI | boundaries، سیاست مجوزها، build، lint، typecheck، test با PostgreSQL/Kafka/MinIO واقعی |
+| CI | boundaries، سیاست مجوزها، build، lint، typecheck، test با PostgreSQL/Kafka/SeaweedFS واقعی |
 
 **هنوز انجام نشده (M1.x / M2):** Idempotency-Key و If-Match در API؛ تولید OpenAPI و
 ابزارهای MCP؛ اعمال Data Scope در کوئری‌ها (فعلاً فقط وجود مجوز بررسی می‌شود)؛

@@ -12,7 +12,7 @@ const Env = z.object({
   LOGIN_MAX_FAILURES: z.coerce.number().int().positive().default(5),
   LOGIN_LOCK_MINUTES: z.coerce.number().int().positive().default(15),
   CORS_ORIGINS: z.string().default('http://localhost:3000'),
-  S3_ENDPOINT: z.string().default('http://localhost:9000'),
+  S3_ENDPOINT: z.string().default('http://localhost:8333'),
   S3_REGION: z.string().default('us-east-1'),
   S3_BUCKET: z.string().default('simorgh'),
   S3_ACCESS_KEY: z.string().default('simorgh'),

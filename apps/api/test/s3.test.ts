@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../src/config.js';
 import { S3ObjectStorage } from '../src/kernel/files/object-storage.js';
 
-// Runs against a real S3 API (MinIO in CI, moto or MinIO locally) when
+// Runs against a real S3 API (SeaweedFS in CI and compose) when
 // S3_TEST_ENDPOINT is set; the in-memory store covers the flow otherwise.
 const endpoint = process.env.S3_TEST_ENDPOINT;
 
@@ -13,7 +13,9 @@ describe.skipIf(!endpoint)('S3 object storage adapter', () => {
       DATABASE_URL: 'postgres://unused',
       JWT_SECRET: 'x'.repeat(32),
       S3_ENDPOINT: endpoint,
-      S3_BUCKET: `simorgh-test-${Date.now()}`,
+      // one bucket, reused across runs — the product also uses a single bucket;
+      // per-run keys below keep runs apart. (SeaweedFS pre-allocates volumes per bucket.)
+      S3_BUCKET: 'simorgh-test',
       S3_ACCESS_KEY: process.env.S3_TEST_ACCESS_KEY ?? 'test',
       S3_SECRET_KEY: process.env.S3_TEST_SECRET_KEY ?? 'test-secret',
     }),
@@ -23,7 +25,7 @@ describe.skipIf(!endpoint)('S3 object storage adapter', () => {
 
   it('uploads through a presigned PUT, verifies with HEAD, downloads through a presigned GET', async () => {
     await storage.ensureBucket();
-    const key = 'tenant/eng.design/1/file';
+    const key = `tenant/eng.design/${Date.now()}/file`;
     const put = await storage.presignPut(key, { contentType: 'application/pdf', sizeBytes: body.length, sha256Hex }, 60);
     const up = await fetch(put.url, { method: 'PUT', headers: put.headers, body });
     expect(up.status).toBe(200);
@@ -43,9 +45,9 @@ describe.skipIf(!endpoint)('S3 object storage adapter', () => {
     expect(signed).toEqual(expect.arrayContaining(['content-type', 'content-length', 'x-amz-checksum-sha256']));
   });
 
-  // Only stores that verify signatures can prove the negative (MinIO does; moto does not by default).
+  // Only stores that verify signatures can prove the negative (SeaweedFS with credentials does; moto does not).
   it.skipIf(process.env.S3_TEST_ENFORCES_SIGNATURES !== '1')('rejects a presigned PUT replayed with other content', async () => {
-    const key = 'tenant/eng.design/1/other';
+    const key = `tenant/eng.design/${Date.now()}/other`;
     const put = await storage.presignPut(key, { contentType: 'application/pdf', sizeBytes: body.length, sha256Hex }, 60);
     const up = await fetch(put.url, { method: 'PUT', headers: { ...put.headers, 'content-type': 'text/html' }, body });
     expect(up.status).toBe(403);
