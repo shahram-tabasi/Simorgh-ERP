@@ -2,14 +2,51 @@
   "$comment": "Open-source policy (ADR-16). tools/check-licenses.mjs enforces this in CI. Adding a component or an exception is a decision: record why here, and in docs/architecture/technology-register.md.",
   "licenses": {
     "permissive": [
-      "MIT", "MIT-0", "ISC", "0BSD", "BSD-2-Clause", "BSD-3-Clause", "Apache-2.0", "PostgreSQL",
-      "Python-2.0", "BlueOak-1.0.0", "Unlicense", "CC0-1.0", "Zlib", "BSD-3-Clause-Clear"
+      "MIT",
+      "MIT-0",
+      "ISC",
+      "0BSD",
+      "BSD-2-Clause",
+      "BSD-3-Clause",
+      "Apache-2.0",
+      "PostgreSQL",
+      "Python-2.0",
+      "BlueOak-1.0.0",
+      "Unlicense",
+      "CC0-1.0",
+      "Zlib",
+      "BSD-3-Clause-Clear"
     ],
-    "weakCopyleft": ["MPL-2.0"],
-    "data": ["CC-BY-4.0"],
-    "needsException": ["LGPL-2.1-only", "LGPL-2.1-or-later", "LGPL-3.0-only", "LGPL-3.0-or-later", "EPL-2.0"],
-    "forbiddenInCode": ["GPL-2.0-only", "GPL-2.0-or-later", "GPL-3.0-only", "GPL-3.0-or-later", "AGPL-3.0-only", "AGPL-3.0-or-later"],
-    "notOpenSource": ["SSPL-1.0", "BUSL-1.1", "Elastic-2.0", "RSALv2", "Commons-Clause", "Confluent-Community-1.0", "UNLICENSED"]
+    "weakCopyleft": [
+      "MPL-2.0"
+    ],
+    "data": [
+      "CC-BY-4.0"
+    ],
+    "needsException": [
+      "LGPL-2.1-only",
+      "LGPL-2.1-or-later",
+      "LGPL-3.0-only",
+      "LGPL-3.0-or-later",
+      "EPL-2.0"
+    ],
+    "forbiddenInCode": [
+      "GPL-2.0-only",
+      "GPL-2.0-or-later",
+      "GPL-3.0-only",
+      "GPL-3.0-or-later",
+      "AGPL-3.0-only",
+      "AGPL-3.0-or-later"
+    ],
+    "notOpenSource": [
+      "SSPL-1.0",
+      "BUSL-1.1",
+      "Elastic-2.0",
+      "RSALv2",
+      "Commons-Clause",
+      "Confluent-Community-1.0",
+      "UNLICENSED"
+    ]
   },
   "npmExceptions": {
     "@img/sharp-libvips-linux-x64": "LGPL-3.0 native image library loaded dynamically by sharp (Next.js image optimisation); used unmodified, so LGPL obligations are met by shipping it as a separate library.",
@@ -18,13 +55,40 @@
     "@img/sharp-libvips-darwin-x64": "Same as @img/sharp-libvips-linux-x64 (macOS build)."
   },
   "images": [
-    { "image": "postgres", "component": "PostgreSQL", "license": "PostgreSQL" },
-    { "image": "apache/kafka", "component": "Apache Kafka", "license": "Apache-2.0" },
-    { "image": "valkey/valkey", "component": "Valkey (Linux Foundation fork of Redis 7.2)", "license": "BSD-3-Clause" },
-    { "image": "golang", "component": "Go toolchain (build stage only)", "license": "BSD-3-Clause" },
-    { "image": "gcr.io/distroless/static-debian12", "component": "Distroless base image", "license": "Apache-2.0" }
+    {
+      "image": "postgres",
+      "component": "PostgreSQL",
+      "license": "PostgreSQL"
+    },
+    {
+      "image": "apache/kafka",
+      "component": "Apache Kafka",
+      "license": "Apache-2.0"
+    },
+    {
+      "image": "valkey/valkey",
+      "component": "Valkey (Linux Foundation fork of Redis 7.2)",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "image": "golang",
+      "component": "Go toolchain (build stage only)",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "image": "gcr.io/distroless/static-debian12",
+      "component": "Distroless base image",
+      "license": "Apache-2.0"
+    }
   ],
   "builtFromSource": [
-    { "name": "minio", "component": "MinIO", "license": "AGPL-3.0-only", "why": "Runs as a separate, unmodified network service behind the S3 API, so AGPL does not reach Simorgh's code. Open decision in the technology register: keep MinIO or move to SeaweedFS (Apache-2.0)." }
+    {
+      "name": "minio",
+      "component": "MinIO community edition",
+      "license": "AGPL-3.0-only",
+      "version": "v0.0.0-20260212201848-7aac2a2c5b7c (code as of 2025-10-23; last release RELEASE.2025-10-15T17-29-55Z)",
+      "scope": "CI and local development only — must NOT ship in the product",
+      "why": "End of life: upstream froze the code with no security patches (min.io/pricing, repo README). Kept only to exercise the S3 adapter until decision 2 in docs/architecture/technology-register.md picks the replacement."
+    }
   ]
 }

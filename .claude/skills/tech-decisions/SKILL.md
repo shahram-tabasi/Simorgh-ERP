@@ -55,5 +55,5 @@ Exception: an owner decision already recorded in
 - Event bus: **Apache Kafka** (KRaft), client `@platformatic/kafka` — not RabbitMQ, not kafkajs.
 - Cache and queues: **Valkey** — not Redis ≥ 7.4.
 - Search and logs target: **OpenSearch** (moving the current ELK is open decision 1).
-- Object storage: **MinIO** built from source, via the S3 API only (SeaweedFS is open decision 2).
+- Object storage: code uses the S3 API only. **MinIO must not ship** — the community edition is end-of-life (frozen, no security patches) and AIStor Free forbids redistribution; it stays in CI for tests only. The replacement (SeaweedFS / Versity S3 Gateway) is open decision 2.
 - Open: graph database for the AI layer (decision 3).
