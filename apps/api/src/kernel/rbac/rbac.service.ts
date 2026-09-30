@@ -22,6 +22,8 @@ const CACHE_TTL_MS = 60_000;
 
 /** Key of the system role every tenant's owner gets at provisioning. */
 export const ADMIN_ROLE_KEY = 'admin';
+/** Key of the system role every member gets when they join. */
+export const MEMBER_ROLE_KEY = 'member';
 
 @Injectable()
 export class RbacService {

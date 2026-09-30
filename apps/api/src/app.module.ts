@@ -11,6 +11,8 @@ import { IdentityModule } from './kernel/identity/identity.module.js';
 import { PermissionGuard } from './kernel/rbac/permission.guard.js';
 import { RbacModule } from './kernel/rbac/rbac.module.js';
 import { KernelSharedModule } from './kernel/shared.module.js';
+import { KernelWorkModule } from './kernel/work.module.js';
+import { HcmModule } from './modules/hcm/hcm.module.js';
 import { TenancyModule } from './kernel/tenancy/tenancy.module.js';
 
 @Module({})
@@ -19,7 +21,7 @@ export class AppModule {
     return {
       module: AppModule,
       global: true,
-      imports: [DbModule, KernelSharedModule, IdentityModule, RbacModule, TenancyModule, FilesModule],
+      imports: [DbModule, KernelSharedModule, IdentityModule, RbacModule, KernelWorkModule, TenancyModule, FilesModule, HcmModule],
       controllers: [HealthController],
       providers: [
         { provide: CONFIG, useValue: config },

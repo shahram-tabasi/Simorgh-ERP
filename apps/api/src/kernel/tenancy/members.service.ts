@@ -8,7 +8,7 @@ import { ApiError } from '../http/api-error.js';
 import type { TenantContext } from '../http/context.js';
 import { PasswordService } from '../identity/password.service.js';
 import { OutboxService } from '../outbox/outbox.service.js';
-import { ADMIN_ROLE_KEY, RbacService } from '../rbac/rbac.service.js';
+import { ADMIN_ROLE_KEY, MEMBER_ROLE_KEY, RbacService } from '../rbac/rbac.service.js';
 
 @Injectable()
 export class MembersService {
@@ -43,6 +43,9 @@ export class MembersService {
         .onConflictDoNothing()
         .returning();
       if (!inserted.length) throw ApiError.conflict('MEMBER_EXISTS', 'Already a member');
+      // everyone starts with the basic system role (it can be taken away later)
+      const [basic] = await tx.select({ id: roles.id }).from(roles).where(and(eq(roles.key, MEMBER_ROLE_KEY), eq(roles.isSystem, true)));
+      if (basic) await tx.insert(userRoles).values({ tenantId: sql`core.current_tenant()`, userId: user!.id, roleId: basic.id });
 
       const member = (await this.summaries(tx, user!.id))[0]!;
       await this.audit.record(tx, ctx, { action: 'core.member.add', entityType: 'core.user', entityId: user!.id, after: member });

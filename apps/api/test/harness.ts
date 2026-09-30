@@ -160,3 +160,42 @@ export async function addMember(t: TestApp, tenant: TenantFixture, email: string
   const token = (await login(t, email, 'member-pass-123', tenant.code)).accessToken;
   return { userId: res.body.userId, token };
 }
+
+/** Creates a role with these grants and gives it to `userId` (optionally in an org-unit or legal-entity context). */
+export async function grantRole(
+  t: TestApp,
+  tenant: TenantFixture,
+  userId: string,
+  key: string,
+  permissions: { key: string; scope: string }[],
+  context?: { type: 'org_unit' | 'legal_entity'; id: string },
+): Promise<void> {
+  const roles = await t.request('GET', '/api/v1/core/roles', { token: tenant.ownerToken });
+  let role = roles.body.find((r: { key: string }) => r.key === key);
+  if (!role) {
+    const created = await t.request('POST', '/api/v1/core/roles', { token: tenant.ownerToken, body: { key, name: key, permissions } });
+    if (created.status !== 201) throw new Error(`role failed: ${created.status} ${JSON.stringify(created.body)}`);
+    role = created.body;
+  }
+  const assigned = await t.request('POST', `/api/v1/core/members/${userId}/roles`, {
+    token: tenant.ownerToken,
+    body: { roleId: role.id, ...(context ? { contextType: context.type, contextId: context.id } : {}) },
+  });
+  if (assigned.status !== 201) throw new Error(`assign failed: ${assigned.status} ${JSON.stringify(assigned.body)}`);
+}
+
+/** Creates an org unit as the tenant owner and returns its id. */
+export async function orgUnit(
+  t: TestApp,
+  tenant: TenantFixture,
+  body: { code: string; name?: string; parentId?: string; managerUserId?: string },
+): Promise<string> {
+  const r = await t.request('POST', '/api/v1/core/org-units', { token: tenant.ownerToken, body: { name: body.code, ...body } });
+  if (r.status !== 201) throw new Error(`org unit failed: ${r.status} ${JSON.stringify(r.body)}`);
+  return r.body.id;
+}
+
+export async function joinUnit(t: TestApp, tenant: TenantFixture, unitId: string, userId: string): Promise<void> {
+  const r = await t.request('PUT', `/api/v1/core/org-units/${unitId}/members/${userId}`, { token: tenant.ownerToken, body: {} });
+  if (r.status !== 200) throw new Error(`join failed: ${r.status} ${JSON.stringify(r.body)}`);
+}

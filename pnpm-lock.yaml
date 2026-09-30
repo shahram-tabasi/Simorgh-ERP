@@ -53,6 +53,9 @@ importers:
       '@simorgh/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@simorgh/jalali':
+        specifier: workspace:*
+        version: link:../../packages/jalali
       drizzle-orm:
         specifier: ^0.45.3
         version: 0.45.3(@types/pg@8.23.1)(pg@8.23.0)

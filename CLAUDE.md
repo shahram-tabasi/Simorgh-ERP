@@ -19,7 +19,10 @@ The owner writes in Persian; answer in Persian.
 ## Layout
 
 `apps/api` NestJS 12 kernel · `apps/worker` outbox → Kafka · `apps/web` Next.js 16 UI/BFF ·
-`packages/db` SQL migrations (source of truth) + Drizzle · `packages/contracts` Zod, permissions, events.
+`packages/db` SQL migrations (source of truth) + Drizzle · `packages/contracts` Zod, permissions, events ·
+`packages/jalali` calendar. In `apps/api/src`: `kernel/` (tenancy, identity, rbac, org + data scope,
+calendar, workflow, kartabl, tasks, audit, outbox, files) and `modules/<m>/` (first: `hcm`); a module
+reaches another only through its `public/`.
 
 ## Checking a change
 

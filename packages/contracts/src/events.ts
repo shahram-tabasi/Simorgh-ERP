@@ -49,4 +49,10 @@ export const CoreEvents = {
   roleAssigned: 'core.role.assigned',
   roleChanged: 'core.role.changed',
   attachmentStored: 'core.attachment.stored',
+  orgUnitChanged: 'core.org_unit.changed',
+  workflowStarted: 'core.workflow.started',
+  approvalRequested: 'core.approval.requested',
+  workflowCompleted: 'core.workflow.completed',
+  inboxItemCreated: 'core.inbox_item.created',
+  taskAssigned: 'core.task.assigned',
 } as const;

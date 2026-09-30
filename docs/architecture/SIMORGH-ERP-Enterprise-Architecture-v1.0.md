@@ -1317,7 +1317,7 @@ Simorgh-ERP/
 |---|---|---|
 | **M0 — بهداشت** | چرخش همهٔ کلیدها و secretهایی که در مخازن عمومی commit شده‌اند؛ پاک‌سازی تاریخچه؛ فعال‌سازی secret scanning | هیچ secret در git |
 | **M1 — اسکلت** ✅ | monorepo، CI (lint، typecheck، test، boundaries)، `packages/db` با DDL پیوست B، Kernel: Tenant/Identity/RBAC/Audit/Outbox/Numbering/Files | ورود، ساخت tenant و نقش، تست RLS سبز — **انجام شد** (README ریشه: «وضعیت M1») |
-| **M2 — Kara → ERP** | انتقال منطق Kara به ماژول‌های `org`، `workflow`، `hcm`؛ اسکریپت `tools/migrate-kara`: برای هر `tenant_<slug>` داده‌ها با `tenant_id` به shared schema کپی می‌شوند؛ UI به `apps/web` منتقل می‌شود | همهٔ صفحات Kara روی ERP؛ Kara فقط‌خواندنی و سپس خاموش |
+| **M2 — Kara → ERP** (در حال انجام) | انتقال منطق Kara به ماژول‌های `org`، `workflow`، `hcm` (بخش اول انجام شد: ساختار سازمانی و Data Scope، تقویم کاری، موتور گردش‌کار، کارتابل، میز کار، مرخصی — README «وضعیت M2»)؛ اسکریپت `tools/migrate-kara`: برای هر `tenant_<slug>` داده‌ها با `tenant_id` به shared schema کپی می‌شوند؛ UI به `apps/web` منتقل می‌شود | همهٔ صفحات Kara روی ERP؛ Kara فقط‌خواندنی و سپس خاموش |
 | **M3 — Design Suite پشت احراز هویت ERP** | UI در `packages/design-suite` و mount در `apps/web/eng`؛ Express موقتاً پشت API gateway با توکن ERP؛ `prj.projects` و Design با OE پیوند می‌خورد | هیچ دسترسی بدون احراز هویت |
 | **M4 — Design Suite → Postgres** | ماژول `elec` در NestJS؛ اسکریپت `tools/migrate-mongo`: `ProjectData` → جداول `elec.*` + هندسه در jsonb/S3، `revisions` → `eng.design_revisions`؛ Parts → `core.items` | Mongo فقط‌خواندنی و سپس حذف؛ EBOM از Revision تولید می‌شود |
 | **M5 — یکپارچه‌سازی AI** | تجمیع ~۵۰ سرویس به ۴ سرویس + `simorgh_py`؛ حذف ۵ کپی `backend`؛ auth پلتفرم AI → Identity ERP؛ ابزارها از MCP ERP | کاهش ≥۶۰٪ کد Python؛ یک Login |

@@ -200,3 +200,4 @@ export function timeToMinutes(t: string): number {
   if (!m) throw new TypeError(`not a HH:MM time: ${t}`);
   return Number(m[1]) * 60 + Number(m[2]);
 }
+export * from './holidays.js';

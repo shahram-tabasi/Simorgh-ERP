@@ -29,4 +29,8 @@ export class ApiError extends HttpException {
   static conflict(code: string, message: string) {
     return new ApiError(HttpStatus.CONFLICT, code, message);
   }
+  /** Well-formed, but a business rule says no (a leave cap, an insufficient balance). */
+  static unprocessable(code: string, message: string) {
+    return new ApiError(HttpStatus.UNPROCESSABLE_ENTITY, code, message);
+  }
 }

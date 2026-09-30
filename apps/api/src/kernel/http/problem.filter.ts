@@ -61,6 +61,12 @@ export class ProblemFilter implements ExceptionFilter {
     if (pgCode === '23505') {
       return { type: 'https://simorgh.dev/problems/conflict', title: 'Already exists', status: 409, code: 'CONFLICT' };
     }
+    if (pgCode === '23503') {
+      return { type: 'https://simorgh.dev/problems/invalid_reference', title: 'Refers to something that does not exist', status: 400, code: 'INVALID_REFERENCE' };
+    }
+    if (pgCode === '23514') {
+      return { type: 'https://simorgh.dev/problems/constraint_violated', title: 'Breaks a data rule', status: 400, code: 'CONSTRAINT_VIOLATED' };
+    }
     if (pgCode === '42501') {
       return { type: 'https://simorgh.dev/problems/forbidden', title: 'Not allowed', status: 403, code: 'FORBIDDEN' };
     }

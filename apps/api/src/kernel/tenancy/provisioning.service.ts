@@ -3,13 +3,14 @@ import { CORE_PERMISSIONS, CoreEvents, type CreateTenantRequest, type TenantSumm
 import { enterTenant, legalEntities, rolePermissions, roles, tenantMemberships, tenants, userRoles, users } from '@simorgh/db';
 import { desc, eq, sql } from 'drizzle-orm';
 import { AuditService } from '../audit/audit.service.js';
+import { CalendarService } from '../calendar/calendar.service.js';
 import { DbService } from '../db/db.module.js';
 import { ApiError } from '../http/api-error.js';
 import type { RequestContext } from '../http/context.js';
 import { PasswordService } from '../identity/password.service.js';
 import { OutboxService } from '../outbox/outbox.service.js';
 import { PermissionCatalogService } from '../rbac/permission-catalog.service.js';
-import { ADMIN_ROLE_KEY } from '../rbac/rbac.service.js';
+import { ADMIN_ROLE_KEY, MEMBER_ROLE_KEY } from '../rbac/rbac.service.js';
 
 export interface ProvisionedTenant extends TenantSummary {
   legalEntityId: string;
@@ -17,7 +18,7 @@ export interface ProvisionedTenant extends TenantSummary {
 }
 
 /** Permissions of the default `member` role: enough to see the company, nothing to change. */
-const MEMBER_DEFAULTS = [CORE_PERMISSIONS['legal_entity.view']];
+const MEMBER_DEFAULTS = [CORE_PERMISSIONS['legal_entity.view'], CORE_PERMISSIONS['org_unit.view']];
 
 @Injectable()
 export class ProvisioningService {
@@ -27,6 +28,7 @@ export class ProvisioningService {
     private readonly catalog: PermissionCatalogService,
     private readonly audit: AuditService,
     private readonly outbox: OutboxService,
+    private readonly calendar: CalendarService,
   ) {}
 
   list(ctx: RequestContext): Promise<TenantSummary[]> {
@@ -36,8 +38,8 @@ export class ProvisioningService {
   }
 
   /**
-   * Creates a tenant with its first legal entity, the two system roles, and
-   * its owner — all in one transaction, so a tenant is never half-made.
+   * Creates a tenant with its first legal entity, the two system roles, its
+   * owner and a starting work calendar — all in one transaction, so a tenant is never half-made.
    * (Kara did the same in `provision.ts`, one schema per company; here it is
    * rows in shared tables under RLS.)
    */
@@ -76,7 +78,7 @@ export class ProvisioningService {
         .insert(roles)
         .values([
           { tenantId: tid, key: ADMIN_ROLE_KEY, name: 'مدیر سامانه', description: 'دسترسی کامل به همهٔ بخش‌ها', isSystem: true },
-          { tenantId: tid, key: 'member', name: 'کاربر', description: 'دسترسی پایه', isSystem: true },
+          { tenantId: tid, key: MEMBER_ROLE_KEY, name: 'کاربر', description: 'دسترسی پایه', isSystem: true },
         ])
         .returning();
       await tx.insert(rolePermissions).values([
@@ -86,6 +88,7 @@ export class ProvisioningService {
 
       await tx.insert(tenantMemberships).values({ tenantId: tid, userId: owner!.id, isOwner: true, status: 'active' });
       await tx.insert(userRoles).values({ tenantId: tid, userId: owner!.id, roleId: admin!.id });
+      await this.calendar.seedTenant(tx);
 
       const result: ProvisionedTenant = { ...summary(tenant!), legalEntityId: le!.id, ownerUserId: owner!.id };
       await this.audit.record(tx, ctx, { action: 'core.tenant.provision', entityType: 'core.tenant', entityId: tenant!.id, after: result });

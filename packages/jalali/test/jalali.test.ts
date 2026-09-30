@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   addDays, dayDiff, formatJalali, formatJalaliLong, iranianWeekday, isLeapJalali, jalaliMonthLength,
-  jalaliYearRange, timeToMinutes, toGregorian, toJalali, todayIso,
+  iranOfficialHolidays, jalaliYearRange, timeToMinutes, toGregorian, toJalali, todayIso,
 } from '../src/index.js';
 
 describe('jalali', () => {
@@ -54,5 +54,23 @@ describe('jalali', () => {
   it('takes "today" in Tehran, not the server zone', () => {
     // 22:00 UTC on 2026-09-29 is already 2026-09-30 in Tehran (UTC+3:30)
     expect(todayIso(new Date('2026-09-29T22:00:00Z'))).toBe('2026-09-30');
+  });
+});
+
+describe('official holidays', () => {
+  it('places the solar and lunar holidays of 1404', () => {
+    const h = iranOfficialHolidays(1404);
+    const on = (title: string) => h.filter((x) => x.title === title).map((x) => x.date);
+    expect(on('عید نوروز')).toEqual(['2025-03-21', '2025-03-22', '2025-03-23', '2025-03-24']);
+    expect(on('پیروزی انقلاب اسلامی')).toEqual(['2026-02-11']);
+    // lunar dates are estimates: within a day of the dates Iran announced
+    const near = (title: string, official: string) => expect(Math.abs(dayDiff(official, on(title)[0]!))).toBeLessThanOrEqual(1);
+    near('تاسوعای حسینی', '2025-07-05');
+    near('عاشورای حسینی', '2025-07-06');
+    near('عید سعید فطر', '2025-03-31');
+    near('عید سعید قربان', '2025-06-06');
+    expect(on('تاسوعای حسینی')).toEqual(['2025-07-05']);
+    expect(h.every((x, i) => i === 0 || h[i - 1]!.date <= x.date)).toBe(true);
+    expect(h.length).toBeGreaterThanOrEqual(24);
   });
 });
