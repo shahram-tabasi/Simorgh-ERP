@@ -1122,7 +1122,7 @@ flowchart LR
 |---|---|---|
 | `ai-gateway` | مسیریابی مدل، سهمیه، هزینه، sanitize (Harmony)، لاگ | `llm-gateway`، `litellm` |
 | `agent-runtime` | حلقهٔ Agent، برنامه‌ریزی، Tool Calling، حافظهٔ گفتگو | `chat-service`، `project-agent`، `specification-agent`، `cot_engine` |
-| `knowledge` | ingest اسناد، chunk، embed، hybrid search (BM25+kNN)، گراف دانش، grounding | `documents-rag`، `graph-rag`، `context-search`، `doc-processor`، `docling`، `grounding-verifier` |
+| `knowledge` | ingest اسناد، chunk، embed، hybrid search (BM25+kNN)، گراف دانش (Apache AGE در PostgreSQL، به جای Neo4j)، grounding | `documents-rag`، `graph-rag`، `context-search`، `doc-processor`، `docling`، `grounding-verifier` |
 | `ml` | پیش‌بینی تقاضا/lead time، تشخیص ناهنجاری (سند مالی غیرعادی، مصرف مواد) | NEW |
 | ERP MCP server | ابزارهای تولیدشده از OpenAPI (`sales.orders.search`، `inv.stock.get`) + ابزارهای ترکیبی | NEW (قرارداد MCP موجود) |
 

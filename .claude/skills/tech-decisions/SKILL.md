@@ -54,6 +54,6 @@ Exception: an owner decision already recorded in
 
 - Event bus: **Apache Kafka** (KRaft), client `@platformatic/kafka` — not RabbitMQ, not kafkajs.
 - Cache and queues: **Valkey** — not Redis ≥ 7.4.
-- Search and logs target: **OpenSearch** (moving the current ELK is open decision 1).
+- Search and logs: **OpenSearch** + OpenSearch Dashboards + Fluent Bit — not Elasticsearch/ELK (the current ELK moves in M5).
 - Object storage: **SeaweedFS** 4.48 (Apache-2.0), used only through the S3 API. Not MinIO: its community edition is end of life (frozen, no security patches) and AIStor Free forbids redistribution. Versity S3 Gateway remains a supported alternative for plain-files-on-NAS installs.
-- Open: graph database for the AI layer (decision 3).
+- Graph for the AI layer: **Apache AGE** inside PostgreSQL — not Neo4j (moves in M5).

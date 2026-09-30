@@ -32,7 +32,7 @@
 | SeaweedFS 4.48 | Apache-2.0 | ✅ | ذخیره‌ساز فایل پیش‌فرض (تصمیم ۲، ۱۴۰۵/۰۷/۰۸). CI و compose از image رسمی `chrislusf/seaweedfs:4.48` با احراز هویت فعال استفاده می‌کنند. نسخهٔ Enterprise جدایی دارد که استفاده نمی‌شود |
 | MinIO (community) | AGPL-3.0 | 🔁 | **پایان عمر:** کد از ۲۰۲۵-۱۰-۲۳ منجمد است و وصلهٔ امنیتی نمی‌گیرد. از CI و compose هم حذف شد. جزئیات در بخش ۶ |
 | MinIO AIStor Free / Enterprise | تجاری | ⛔ | AIStor Free رایگان ولی تجاری است: کلید لایسنس، فقط یک نود، «Redistribution is prohibited». قابل گنجاندن در Simorgh نیست |
-| OpenSearch | Apache-2.0 | ✅ (هدف) | جست‌وجو و لاگ (تصمیم ۱) |
+| OpenSearch (+ Dashboards، Fluent Bit) | Apache-2.0 | ✅ | جست‌وجو و لاگ (تصمیم ۱، ۱۴۰۵/۰۷/۰۸) |
 | NestJS · Next.js · React · Fastify | MIT | ✅ | |
 | Drizzle ORM · Zod · jose · pg | Apache-2.0 / MIT | ✅ | |
 | `@node-rs/argon2` · `@aws-sdk/*` | MIT / Apache-2.0 | ✅ | |
@@ -47,8 +47,9 @@
 |---|---|---|---|
 | vLLM · LiteLLM (هسته) | Apache-2.0 / MIT | ✅ | پوشهٔ `enterprise/` در LiteLLM تجاری است و استفاده نمی‌شود |
 | Qdrant | Apache-2.0 | ✅ | |
-| Neo4j Community | GPL-3.0 | ⚠️ ❓ | خوشه‌بندی و backup آنلاین فقط در نسخهٔ تجاری است (تصمیم ۳) |
-| Elasticsearch · Kibana · Logstash (ELK فعلی) | AGPL-3.0 / ELv2 / SSPL | ❓ | تصمیم ۱ |
+| Neo4j Community | GPL-3.0 | 🔁 | با Apache AGE جایگزین می‌شود (تصمیم ۳، ۱۴۰۵/۰۷/۰۸)؛ انتقال در M5 |
+| Apache AGE | Apache-2.0 | ✅ | گراف دانش لایهٔ AI داخل PostgreSQL (تصمیم ۳)؛ همان backup و همان RLS |
+| Elasticsearch · Kibana · Logstash (ELK فعلی) | AGPL-3.0 / ELv2 / SSPL | 🔁 | با OpenSearch + Dashboards + Fluent Bit جایگزین می‌شود (تصمیم ۱)؛ انتقال در M5 |
 | Mailcow · GitLab CE | GPL-3.0 / MIT | ✅ | امکانات EE در GitLab تجاری است و استفاده نمی‌شود |
 | Claude API | سرویس تجاری | ⚠️ | فقط از طریق ai-gateway؛ On-prem با مدل متن‌باز روی vLLM هم کار می‌کند |
 
@@ -69,9 +70,9 @@
 | Kafka UIهای تجاری | — | Kafbat UI (Apache-2.0) |
 | `kafkajs` | متن‌باز ولی بی‌نگهداری از ۲۰۲۳ | `@platformatic/kafka` |
 
-## ۵. تصمیم‌های باز (نیاز به نظر صاحب محصول)
+## ۵. تصمیم‌ها (هر سه بسته شده‌اند؛ متن گزینه‌ها برای سابقه می‌ماند)
 
-### تصمیم ۱ — جست‌وجو و لاگ: OpenSearch یا Elasticsearch
+### تصمیم ۱ — جست‌وجو و لاگ: OpenSearch یا Elasticsearch — ✅ **تصمیم گرفته شد: OpenSearch** (۱۴۰۵/۰۷/۰۸)
 
 - **الف (پیشنهاد):** OpenSearch + OpenSearch Dashboards + Fluent Bit، همه Apache-2.0.
   مستقل از یک شرکت و امکانات امنیتی رایگان است. ELK فعلی در M5 منتقل می‌شود.
@@ -106,7 +107,7 @@ MinIO دیگر گزینه نیست (بخش ۶). کد Simorgh فقط با API ا�
 بزرگ مناسب است ولی برای استقرار معمول مشتری بیش از حد سنگین است. مشتری می‌تواند S3
 خودش (AWS، Ceph، یا حتی AIStor با لایسنس خودش) را هم وصل کند.
 
-### تصمیم ۳ — پایگاه‌دادهٔ گراف لایهٔ AI: Neo4j یا Apache AGE
+### تصمیم ۳ — پایگاه‌دادهٔ گراف لایهٔ AI: Neo4j یا Apache AGE — ✅ **تصمیم گرفته شد: Apache AGE** (۱۴۰۵/۰۷/۰۸)
 
 - **الف (پیشنهاد):** Apache AGE (Apache-2.0)، افزونهٔ PostgreSQL که در زیرساخت فعلی
   (`infra-postgres-age.yml`) هم هست. یک پایگاه‌داده کمتر برای نگه‌داری، backup و
